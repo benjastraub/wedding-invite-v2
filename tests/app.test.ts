@@ -47,18 +47,36 @@ function toSavedResponse(values: string[]): GuestResponse {
   return response;
 }
 
-function makeStore(overrides: Partial<SheetsStore> = {}): SheetsStore {  return {
-    readSettings: async () =>
-      new Map<string, string>([
-        ['site_language', 'es'],
-        ['couple_name_groom', 'Liam'],
-        ['couple_name_bride', 'Emma'],
-        ['wedding_date', '2026-09-12'],
-        ['wedding_time', '17:00'],
-        ['wedding_end_date', '2026-09-13'],
-        ['wedding_end_time', '02:00'],
-        ['wedding_timezone', 'Europe/Madrid'],
-      ]),
+/**
+ * Wedding dates relative to "now" so these tests keep passing as time moves
+ * on: a hardcoded date would eventually be in the past and (since the wedding
+ * ending closes the RSVP window) would start failing every POST assertion.
+ */
+const WEDDING = (() => {
+  const day = 24 * 60 * 60 * 1000;
+  const start = new Date(Date.now() + 30 * day);
+  const end = new Date(Date.now() + 31 * day);
+  return { date: start.toISOString().slice(0, 10), endDate: end.toISOString().slice(0, 10) };
+})();
+
+/** Settings tab rows; `overrides` win, so tests can close the RSVP window. */
+function settingsMap(overrides: Record<string, string> = {}): Map<string, string> {
+  return new Map<string, string>([
+    ['site_language', 'es'],
+    ['couple_name_groom', 'Liam'],
+    ['couple_name_bride', 'Emma'],
+    ['wedding_date', WEDDING.date],
+    ['wedding_time', '17:00'],
+    ['wedding_end_date', WEDDING.endDate],
+    ['wedding_end_time', '02:00'],
+    ['wedding_timezone', 'Europe/Madrid'],
+    ...Object.entries(overrides),
+  ]);
+}
+
+function makeStore(overrides: Partial<SheetsStore> = {}): SheetsStore {
+  return {
+    readSettings: async () => settingsMap(),
     findGuestByToken: async (token) =>
       token === KNOWN.token ? KNOWN : token === NO_PLUS_ONE.token ? NO_PLUS_ONE : null,
     findResponseByToken: async () => null,
@@ -103,16 +121,25 @@ describe('API routes (mock sheet store)', () => {
     const body = (await res.json()) as {
       language: string;
       couple: { groom: string };
-      wedding: { date: string; time: string; endDate: string; endTime: string; timezone: string; rsvpDeadline: string };
+      wedding: {
+        date: string;
+        time: string;
+        endDate: string;
+        endTime: string;
+        timezone: string;
+        rsvpDeadline: string;
+        rsvpDeadlineStrict: boolean;
+      };
     };
     expect(body.language).toBe('es');
     expect(body.couple.groom).toBe('Liam');
-    expect(body.wedding.date).toBe('2026-09-12');
+    expect(body.wedding.date).toBe(WEDDING.date);
     expect(body.wedding.time).toBe('17:00');
-    expect(body.wedding.endDate).toBe('2026-09-13');
+    expect(body.wedding.endDate).toBe(WEDDING.endDate);
     expect(body.wedding.endTime).toBe('02:00');
     expect(body.wedding.timezone).toBe('Europe/Madrid');
     expect(body.wedding.rsvpDeadline).toBe('');
+    expect(body.wedding.rsvpDeadlineStrict).toBe(false);
   });
 
   it('GET /api/guest/:token returns 404 for unknown tokens', async () => {
@@ -285,6 +312,76 @@ describe('API routes (mock sheet store)', () => {
       body: '{not json',
     });
     expect(badJson.status).toBe(400);
+  });
+
+  it('POST rsvp returns 403 when a strict deadline has passed', async () => {
+    const appended: string[][] = [];
+    const store = makeStore({
+      readSettings: async () =>
+        settingsMap({ rsvp_deadline: '2020-01-01', rsvp_deadline_strict: 'TRUE' }),
+      appendResponse: async (values) => {
+        appended.push(values);
+      },
+    });
+    const { baseUrl, close } = await startServer(createApp(store));
+    closeFn = close;
+
+    const res = await fetch(`${baseUrl}/api/guest/known-token/rsvp`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ attending: 'yes' }),
+    });
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'rsvp_closed' });
+    expect(appended).toHaveLength(0);
+  });
+
+  it('POST rsvp still accepts responses after a non-strict deadline', async () => {
+    const appended: string[][] = [];
+    const store = makeStore({
+      readSettings: async () =>
+        settingsMap({ rsvp_deadline: '2020-01-01', rsvp_deadline_strict: 'FALSE' }),
+      appendResponse: async (values) => {
+        appended.push(values);
+      },
+    });
+    const { baseUrl, close } = await startServer(createApp(store));
+    closeFn = close;
+
+    const res = await fetch(`${baseUrl}/api/guest/known-token/rsvp`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ attending: 'no' }),
+    });
+    expect(res.status).toBe(200);
+    expect(appended).toHaveLength(1);
+  });
+
+  it('POST rsvp returns 403 after the wedding has ended', async () => {
+    const appended: string[][] = [];
+    const store = makeStore({
+      readSettings: async () =>
+        settingsMap({
+          wedding_date: '2020-06-01',
+          wedding_time: '17:00',
+          wedding_end_date: '2020-06-02',
+          wedding_end_time: '02:00',
+        }),
+      appendResponse: async (values) => {
+        appended.push(values);
+      },
+    });
+    const { baseUrl, close } = await startServer(createApp(store));
+    closeFn = close;
+
+    const res = await fetch(`${baseUrl}/api/guest/known-token/rsvp`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ attending: 'yes' }),
+    });
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'rsvp_closed' });
+    expect(appended).toHaveLength(0);
   });
 
   it('unknown /api paths return JSON 404', async () => {

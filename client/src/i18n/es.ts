@@ -21,6 +21,11 @@ export const es: Record<MessageKey, string> = {
   'common.yes': 'Sí',
   'common.no': 'No',
 
+  // ---- after the wedding ----
+  'postWedding.title': 'Gracias por celebrar con nosotros',
+  'postWedding.body':
+    'Nuestra boda ya pasó y fue aún más especial gracias a ti.',
+
   // ---- landing page ----
   'landing.saveTheDate': 'Reserva la fecha',
   'landing.detailsTitle': 'Los detalles',
@@ -68,4 +73,8 @@ export const es: Record<MessageKey, string> = {
   'invite.thanksComing': '¡No podemos esperar a celebrar contigo!',
   'invite.thanksMissing': '¡Te extrañaremos! Gracias por avisarnos.',
   'invite.required': 'Por favor elige una respuesta',
+  'invite.rsvpClosedTitle': 'El plazo para confirmar ha terminado',
+  'invite.rsvpClosedBody':
+    'Ya no aceptamos respuestas en línea. Si aún necesitas decirnos algo, por favor contáctanos directamente.',
+  'invite.rsvpClosedContact': 'Contáctanos',
 };

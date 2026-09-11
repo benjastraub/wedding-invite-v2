@@ -30,6 +30,12 @@ MIT licensed — take it, personalize it, host it for anyone.
   public.
 - **Add to calendar** — the "When" card downloads an `.ics` file guests can
   import into any calendar app (timezone-aware when `wedding_timezone` is set).
+- **RSVP deadline (optional)** — `rsvp_deadline` is shown to guests on the
+  details cards; set `rsvp_deadline_strict` to `TRUE` and submissions are also
+  blocked after that day — the form closes and the API rejects late answers.
+- **After the wedding** — once the wedding has ended (same rule as the `.ics`)
+  the countdown and the RSVP form give way to a thank-you message, and the API
+  stops accepting responses.
 - **English / Spanish** — the language is a *site setting* from the sheet;
   visitors never get a toggle.
 - **Minimal dependencies** — 6 runtime packages total (see below).
@@ -330,7 +336,7 @@ this already in place.
 | `wedding_date` | `2026-09-12` | `YYYY-MM-DD` |
 | `wedding_time` | `17:00` | 24h, venue local time |
 | `wedding_timezone` | `Europe/Madrid` | optional — IANA timezone for the "Add to calendar" `.ics`; empty = viewer's local time |
-| `wedding_end_date` | `2026-09-13` | optional — when the party runs past midnight (only used with `wedding_end_time`) |
+| `wedding_end_date` | `2026-09-13` | optional — when the party runs past midnight (only used with `wedding_end_time`); also when the site switches to the post-wedding message |
 | `wedding_end_time` | `02:00` | optional — 24h, venue local time; empty = start + 10 hours |
 | `venue_name` | `Hacienda Los Rosales` | |
 | `venue_address` | `Calle Flores 123, Ciudad` | |
@@ -340,7 +346,8 @@ this already in place.
 | `contact_email` | `you@example.com` | optional — shown to guests who already responded |
 | `contact_whatsapp` | `https://wa.me/15551234567` | optional — WhatsApp link shown to guests who already responded |
 | `site_language` | `en` | `en` or `es` — **site-wide, visitors cannot change it** |
-| `rsvp_deadline` | `2026-08-01` | optional, shown on the details cards |
+| `rsvp_deadline` | `2026-08-01` | optional — shown to guests on the details cards |
+| `rsvp_deadline_strict` | `TRUE` | optional — `TRUE` blocks RSVP submissions after the end of `rsvp_deadline` (venue timezone); empty/`FALSE` = the deadline is informational only |
 
 Unknown/missing keys fall back to defaults in `server/src/settings.ts`.
 Changes appear within ~30 seconds (settings cache TTL) — no redeploy.
@@ -438,9 +445,10 @@ npm run build       # shared + server + client production builds
 ```
 
 The tests cover: i18n key parity between English and Spanish, RSVP payload
-validation/sanitization, guest-token rules, the photo endpoints and demo
-mode. You can verify the runtime dependency footprint with
-`npm ls --omit=dev` (should show only the 6 runtime packages).
+validation/sanitization, guest-token rules, the RSVP window (strict deadline
+and post-wedding states) and the photo endpoints and demo mode. You can verify
+the runtime dependency footprint with `npm ls --omit=dev` (should show only
+the 6 runtime packages).
 
 ## Scripts reference
 
@@ -474,6 +482,10 @@ mode. You can verify the runtime dependency footprint with
   `guests` tab (run `sheet:tokens`), or you edited the token by hand.
 - **Language doesn't change after editing the sheet** — settings are cached
   for 30 seconds; refresh again.
+- **A guest can't submit their RSVP** — the RSVP window is closed: either
+  `rsvp_deadline_strict` is `TRUE` and the deadline has passed, or the wedding
+  has already ended (see `wedding_end_date`/`wedding_end_time`). The API
+  answers `403 rsvp_closed` and the page shows a closed notice.
 - **Photos don't appear / just added one** — the photo list is cached for
   5 minutes; wait and refresh. The hero image must be named `hero.*`.
 - **`/api/health` OK but pages fail** — `GOOGLE_SPREADSHEET_ID` missing/typo,
@@ -481,31 +493,6 @@ mode. You can verify the runtime dependency footprint with
 - **Sheet created but you can't see it in Drive** — a script ran as the
   service account (you had `GOOGLE_APPLICATION_CREDENTIALS` set). Unset it,
   `gcloud auth application-default login`, and re-run `npm run sheet:setup`.
-
-## 🚧 Out of scope *(decide later: implement or discard)*
-
-These were deliberately left out. Revisit if needed:
-
-- Photo gallery / itinerary sections beyond the carousel
-- Admin UI for editing guests or reading responses (the sheet is the admin UI)
-- Email / WhatsApp notifications when someone responds
-- Guest-list management UI (scripts only)
-- Visitor language toggle (language is a site setting by design)
-- RSVP form on the public landing page (RSVP lives only on personalized views)
-
-## 💭 Further considerations *(candidates: implement later or discard)*
-
-- **Post-wedding state** — after `wedding_date`, show a "thanks for
-  celebrating" message instead of the countdown and RSVP form.
-- **RSVP deadline enforcement** — currently `rsvp_deadline` is informational;
-  could block submissions after it.
-- **Song list export** — a script that dedupes the `song_request` column into
-  a playlist CSV for the DJ.
-- **Per-guest language override** — currently site-wide only (a column in the
-  `guests` tab could override `site_language` per guest).
-- **Rate limiting** — a per-IP limiter on the RSVP endpoint for busier sites.
-- **Caching beyond in-memory TTL** — fine at wedding scale (Sheets API quota:
-  300 req/min); revisit only if traffic spikes.
 
 ## License
 

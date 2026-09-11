@@ -27,10 +27,3 @@ export function formatTime(time: string, language: Language): string {
     minute: '2-digit',
   });
 }
-
-/** Countdown target from the sheet's date/time settings, or null if invalid. */
-export function countdownTarget(date: string, time: string): Date | null {
-  const iso = `${date || ''}${time ? `T${time}` : 'T00:00'}`;
-  const target = new Date(iso);
-  return Number.isNaN(target.getTime()) ? null : target;
-}

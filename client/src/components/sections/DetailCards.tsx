@@ -50,6 +50,8 @@ interface DetailCardsProps {
   settings: SiteSettings;
   /** Optional gift registry URL — renders the gift card in the same section. */
   giftUrl?: string;
+  /** Hide the deadline line once the RSVP window has closed. */
+  rsvpClosed?: boolean;
 }
 
 /**
@@ -57,7 +59,7 @@ interface DetailCardsProps {
  * with the dress code card at the bottom — one centered column on every
  * screen size. Values come straight from the sheet's settings tab.
  */
-export function DetailCards({ settings, giftUrl }: DetailCardsProps) {
+export function DetailCards({ settings, giftUrl, rsvpClosed }: DetailCardsProps) {
   const { t, language } = useLanguage();
   const date = settings.wedding.date ? formatDate(settings.wedding.date, language) : '';
   const time = settings.wedding.time ? formatTime(settings.wedding.time, language) : '';
@@ -94,7 +96,7 @@ export function DetailCards({ settings, giftUrl }: DetailCardsProps) {
           <Title>{t('landing.dateTitle')}</Title>
           {date && <Line>{date}</Line>}
           {time && <Line>{time}</Line>}
-          {settings.wedding.rsvpDeadline && (
+          {settings.wedding.rsvpDeadline && !rsvpClosed && (
             <MutedLine>
               {t('landing.rsvpBy')} {formatDate(settings.wedding.rsvpDeadline, language)}
             </MutedLine>

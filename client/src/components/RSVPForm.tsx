@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import styled from 'styled-components';
 import type { Attendance, GuestRow } from 'shared';
-import { submitRsvp } from '../api/client';
+import { submitRsvp, ApiError } from '../api/client';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
@@ -65,6 +65,8 @@ interface RSVPFormProps {
   guest: GuestRow;
   /** Called after a response is saved. */
   onSuccess: (attending: Attendance) => void;
+  /** Called when the server rejects the RSVP because the window has closed. */
+  onClosed?: () => void;
 }
 
 /**
@@ -73,7 +75,7 @@ interface RSVPFormProps {
  *  - +1 allowed: yes/no "bringing the +1" choice; the +1 name and dietary
  *    fields appear only when the +1 is coming
  */
-export function RSVPForm({ guest, onSuccess }: RSVPFormProps) {
+export function RSVPForm({ guest, onSuccess, onClosed }: RSVPFormProps) {
   const { t } = useLanguage();
   const [attending, setAttending] = useState<Attendance | null>(null);
   const [bringingPlusOne, setBringingPlusOne] = useState<'yes' | 'no' | null>(null);
@@ -126,8 +128,15 @@ export function RSVPForm({ guest, onSuccess }: RSVPFormProps) {
       });
       setPhase('done');
       onSuccess(attending);
-    } catch {
+    } catch (err) {
       submittingRef.current = false;
+      // The server is authoritative: the deadline or the wedding end can
+      // close the window while this page is open. Swap in the closed notice
+      // instead of the generic error.
+      if (err instanceof ApiError && err.code === 'rsvp_closed') {
+        onClosed?.();
+        return;
+      }
       setSubmitFailed(true);
       setPhase('idle');
     }
@@ -136,7 +145,7 @@ export function RSVPForm({ guest, onSuccess }: RSVPFormProps) {
   if (phase === 'done') {
     return (
       <Card>
-        <ThanksTitle>💐 {t('invite.thanks')}</ThanksTitle>
+        <ThanksTitle>{t('invite.thanks')}</ThanksTitle>
         <ThanksBody>{attending === 'yes' ? t('invite.thanksComing') : t('invite.thanksMissing')}</ThanksBody>
       </Card>
     );

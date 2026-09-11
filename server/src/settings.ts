@@ -7,13 +7,28 @@ import type { Language, SiteSettings } from 'shared';
 export const DEFAULT_SETTINGS: SiteSettings = {
   language: 'en',
   couple: { groom: 'Groom', bride: 'Bride' },
-  wedding: { date: '', time: '', rsvpDeadline: '', endDate: '', endTime: '', timezone: '' },
+  wedding: {
+    date: '',
+    time: '',
+    rsvpDeadline: '',
+    rsvpDeadlineStrict: false,
+    endDate: '',
+    endTime: '',
+    timezone: '',
+  },
   venue: { name: '', address: '', mapsUrl: '' },
   dressCode: '',
   giftRegistryUrl: '',
   contactEmail: '',
   contactWhatsApp: '',
 };
+
+/** Values accepted as "yes" in boolean settings (same set as `allows_plus_one`). */
+const TRUTHY_VALUES = new Set(['true', 'yes', '1', 'si', 'sí']);
+
+function parseBoolean(value: string): boolean {
+  return TRUTHY_VALUES.has(value.trim().toLowerCase());
+}
 
 /**
  * Converts the raw `settings` tab (key/value rows) into SiteSettings.
@@ -36,6 +51,7 @@ export function buildSettings(values: Map<string, string>): SiteSettings {
       date: get('wedding_date'),
       time: get('wedding_time'),
       rsvpDeadline: get('rsvp_deadline'),
+      rsvpDeadlineStrict: parseBoolean(get('rsvp_deadline_strict')),
       endDate: get('wedding_end_date'),
       endTime: get('wedding_end_time'),
       timezone: get('wedding_timezone'),

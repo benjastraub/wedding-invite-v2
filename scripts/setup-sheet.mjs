@@ -41,6 +41,7 @@ const SETTINGS_ROWS = [
   ['contact_whatsapp', '', 'Optional WhatsApp link shown to guests who already responded, e.g. "https://wa.me/15551234567"'],
   ['site_language', 'en', 'Site-wide language: "en" or "es". Visitors cannot change it.'],
   ['rsvp_deadline', '', 'Optional ISO date, e.g. "2026-08-01"'],
+  ['rsvp_deadline_strict', '', 'Set to TRUE to block RSVP submissions after rsvp_deadline. Empty/FALSE = the deadline is shown to guests but not enforced'],
 ];
 
 // token | name | allows_plus_one | plus_one_name | status | notes | display_name | plus_one_display_name

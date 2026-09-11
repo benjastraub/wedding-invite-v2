@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
-import { isValidToken } from 'shared';
+import { evaluateRsvpWindow, isValidToken } from 'shared';
 import { buildSettings } from './settings.js';
 import { isRecentDuplicate, validateRsvp } from './rsvp.js';
 import type { SheetsStore } from './sheets.js';
@@ -16,7 +16,8 @@ import { photoEtag } from './drive.js';
  *   GET  /api/health             — Cloud Run health check
  *   GET  /api/settings           — site-wide settings (landing page)
  *   GET  /api/guest/:token       — personalized invite data (404 if unknown)
- *   POST /api/guest/:token/rsvp  — save a guest response (404 if unknown)
+ *   POST /api/guest/:token/rsvp  — save a guest response (404 if unknown,
+ *                                  403 once the RSVP window has closed)
  *   GET  /api/photos             — hero + gallery photo URLs (from Drive or demo)
  *   GET  /api/photos/:id         — streams one photo's bytes (304 on revalidation)
  *
@@ -78,6 +79,13 @@ export function createApp(store: SheetsStore, photoStore: PhotoStore | null = nu
       const guest = await store.findGuestByToken(token);
       if (!guest) {
         res.status(404).json({ error: 'not_found' });
+        return;
+      }
+      // The RSVP window is authoritative here: a strict deadline and the end
+      // of the wedding both close it, whatever the client shows.
+      const settings = buildSettings(await store.readSettings());
+      if (!evaluateRsvpWindow(settings.wedding).open) {
+        res.status(403).json({ error: 'rsvp_closed' });
         return;
       }
       const data = validated.data;

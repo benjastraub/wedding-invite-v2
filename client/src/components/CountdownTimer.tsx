@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { weddingInstants, type SiteSettings } from 'shared';
 import { useLanguage } from '../i18n/LanguageContext';
-import { countdownTarget } from '../utils/date';
 
 const Grid = styled.div`
   display: flex;
@@ -57,29 +57,63 @@ const Today = styled.p`
   color: ${({ theme }) => theme.colors.accent};
 `;
 
+const PostWedding = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  max-width: 560px;
+  margin: 0 auto;
+`;
+
+const PostWeddingTitle = styled.p`
+  margin: 0;
+  font-family: ${({ theme }) => theme.fonts.display};
+  font-size: 1.6rem;
+  color: ${({ theme }) => theme.colors.accent};
+`;
+
+const PostWeddingBody = styled.p`
+  margin: 0;
+  color: ${({ theme }) => theme.colors.muted};
+`;
+
 interface CountdownTimerProps {
-  /** ISO date, e.g. "2026-09-12". */
-  date: string;
-  /** 24h time, e.g. "17:00". */
-  time: string;
+  /** The `wedding` slice of the site settings. */
+  wedding: SiteSettings['wedding'];
 }
 
-/** Live countdown to the wedding date from the sheet's settings. */
-export function CountdownTimer({ date, time }: CountdownTimerProps) {
+/**
+ * Live countdown to the wedding date from the sheet's settings. Once the
+ * wedding starts it switches to "today is the day", and once it has ended
+ * (same end rule as the .ics) to the post-wedding thank-you message.
+ */
+export function CountdownTimer({ wedding }: CountdownTimerProps) {
   const { t } = useLanguage();
-  const target = useMemo(() => countdownTarget(date, time), [date, time]);
+  const instants = useMemo(() => weddingInstants(wedding), [wedding]);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    if (!target) return;
+    if (!instants) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [target]);
+  }, [instants]);
 
-  if (!target) return null;
+  if (!instants) return null;
 
-  const diff = target.getTime() - now;
-  if (diff <= 0) return <Today>{t('common.weddingIsToday')}</Today>;
+  if (now >= instants.endMs) {
+    return (
+      <PostWedding>
+        <PostWeddingTitle>{t('postWedding.title')}</PostWeddingTitle>
+        <PostWeddingBody>{t('postWedding.body')}</PostWeddingBody>
+      </PostWedding>
+    );
+  }
+
+  if (now >= instants.startMs) return <Today>{t('common.weddingIsToday')}</Today>;
+
+  const diff = instants.startMs - now;
 
   const days = Math.floor(diff / 86_400_000);
   const hours = Math.floor((diff % 86_400_000) / 3_600_000);

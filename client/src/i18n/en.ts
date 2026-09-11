@@ -19,6 +19,11 @@ export const en = {
   'common.yes': 'Yes',
   'common.no': 'No',
 
+  // ---- after the wedding ----
+  'postWedding.title': 'Thank you for celebrating with us',
+  'postWedding.body':
+    'Our wedding has come and gone, and it was all the more special because of you.',
+
   // ---- landing page ----
   'landing.saveTheDate': 'Save the date',
   'landing.detailsTitle': 'The details',
@@ -66,6 +71,10 @@ export const en = {
   'invite.thanksComing': "We can't wait to celebrate with you!",
   'invite.thanksMissing': 'We will miss you! Thanks for letting us know.',
   'invite.required': 'Please select an answer',
+  'invite.rsvpClosedTitle': 'The RSVP period has closed',
+  'invite.rsvpClosedBody':
+    'We are no longer accepting responses online. If there is anything you still need to tell us, please get in touch directly.',
+  'invite.rsvpClosedContact': 'Contact us',
 } as const;
 
 export type MessageKey = keyof typeof en;

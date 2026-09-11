@@ -5,8 +5,10 @@ import { ApiError, fetchGuest } from '../api/client';
 import { useLanguage } from '../i18n/LanguageContext';
 import { formatDate, formatTime } from '../utils/date';
 import { useSiteImages } from '../utils/images';
+import { useRsvpWindow } from '../utils/rsvpWindow';
 import { RSVPForm } from '../components/RSVPForm';
 import { ResponseSummary } from '../components/ResponseSummary';
+import { RsvpClosedNotice } from '../components/RsvpClosedNotice';
 import { ErrorScreen, LoadingScreen, NotFoundView } from '../components/Feedback';
 import { DetailCards } from '../components/sections/DetailCards';
 import { HeroImage } from '../components/sections/HeroImage';
@@ -82,6 +84,10 @@ export function InvitePage({ token }: InvitePageProps) {
   const { hero, photos } = useSiteImages();
   const rsvpSectionRef = useRef<HTMLElement | null>(null);
   const [responded, setResponded] = useState(false);
+  // Set when the server rejects a submission as closed (e.g. the deadline
+  // passed while this page was open, or a clock skew). The server wins.
+  const [serverClosed, setServerClosed] = useState(false);
+  const rsvpWindow = useRsvpWindow(data?.settings.wedding ?? null);
 
   // After the RSVP is saved, the form is replaced by the thank-you card. Run
   // the scroll in an effect so it happens after that DOM change commits, and
@@ -123,6 +129,8 @@ export function InvitePage({ token }: InvitePageProps) {
   if (!data) return <LoadingScreen />;
 
   const { settings, guest } = data;
+  const closed = !rsvpWindow.open || serverClosed;
+  const closedReason = rsvpWindow.reason ?? 'deadline';
   const dateLine = [
     settings.wedding.date && formatDate(settings.wedding.date, settings.language),
     settings.wedding.time && formatTime(settings.wedding.time, settings.language),
@@ -148,19 +156,30 @@ export function InvitePage({ token }: InvitePageProps) {
 
       <RsvpSection ref={rsvpSectionRef}>
         <SectionTitle>{t('invite.rsvpTitle')}</SectionTitle>
-        {guest.status === 'responded' ? (
+        {closed ? (
+          <RsvpClosedNotice
+            reason={closedReason}
+            deadline={settings.wedding.rsvpDeadline || undefined}
+            contactEmail={settings.contactEmail || undefined}
+            contactWhatsApp={settings.contactWhatsApp || undefined}
+          />
+        ) : guest.status === 'responded' ? (
           <ResponseSummary
             response={data.response}
             contactEmail={settings.contactEmail || undefined}
             contactWhatsApp={settings.contactWhatsApp || undefined}
           />
         ) : (
-          <RSVPForm guest={guest} onSuccess={() => setResponded(true)} />
+          <RSVPForm
+            guest={guest}
+            onSuccess={() => setResponded(true)}
+            onClosed={() => setServerClosed(true)}
+          />
         )}
       </RsvpSection>
 
       <Section>
-        <DetailCards settings={settings} giftUrl={settings.giftRegistryUrl} />
+        <DetailCards settings={settings} giftUrl={settings.giftRegistryUrl} rsvpClosed={closed} />
       </Section>
 
       <PhotoCarousel photos={photos} />

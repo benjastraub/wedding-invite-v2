@@ -22,13 +22,19 @@ export interface SiteSettings {
     date: string;
     /** 24h time, e.g. "17:00" */
     time: string;
-    /** ISO date after which the form closes (informative only). */
+    /**
+     * ISO date of the RSVP deadline. Informational (shown to guests) unless
+     * `rsvpDeadlineStrict` is true, in which case submissions are blocked
+     * after the end of that day in the venue timezone.
+     */
     rsvpDeadline: string;
+    /** When true, `rsvpDeadline` blocks submissions; false/empty = informational only. */
+    rsvpDeadlineStrict: boolean;
     /** ISO date the event ends, e.g. "2026-09-13"; empty = same day as `date`. */
     endDate: string;
-    /** 24h end time, e.g. "02:00"; empty = start + 10 hours (calendar .ics only). */
+    /** 24h end time, e.g. "02:00"; empty = start + 10 hours. */
     endTime: string;
-    /** IANA timezone, e.g. "Europe/Madrid"; used by the "Add to calendar" .ics. */
+    /** IANA timezone, e.g. "Europe/Madrid"; used by the .ics and the RSVP window. */
     timezone: string;
   };
   venue: {

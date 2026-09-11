@@ -137,6 +137,22 @@ function escapeAndFold(field: string, value: string): string[] {
   return lines;
 }
 
+/** Wall-clock end instant (ms, as-if-UTC) for an event starting at `startMs`. */
+function eventEndWallMs(
+  startMs: number,
+  endDate: string,
+  endTime: string,
+  startDate: string,
+): number {
+  let endMs: number | null = null;
+  if (endTime.trim()) {
+    endMs = parseWallTime(endDate.trim() || startDate, endTime);
+  }
+  if (endMs === null) return startMs + FALLBACK_DURATION_HOURS * HOUR_MS;
+  // End on/before the start (e.g. 02:00 on the wedding day) means next day.
+  return endMs <= startMs ? endMs + DAY_MS : endMs;
+}
+
 /**
  * Builds the full .ics file content, or null when the start is unusable.
  */
@@ -144,17 +160,7 @@ export function buildIcsEvent(input: IcsEventInput): string | null {
   const startMs = parseWallTime(input.startDate, input.startTime);
   if (startMs === null) return null;
 
-  // End instant: explicit end time wins, otherwise fall back to +10h.
-  let endMs: number | null = null;
-  if (input.endTime.trim()) {
-    endMs = parseWallTime(input.endDate.trim() || input.startDate, input.endTime);
-  }
-  if (endMs === null) {
-    endMs = startMs + FALLBACK_DURATION_HOURS * HOUR_MS;
-  } else if (endMs <= startMs) {
-    // End on/before the start (e.g. 02:00 on the wedding day) means next day.
-    endMs += DAY_MS;
-  }
+  const endMs = eventEndWallMs(startMs, input.endDate, input.endTime, input.startDate);
 
   const timezone = input.timezone.trim();
   let startStamp: string;
@@ -190,4 +196,50 @@ export function buildIcsEvent(input: IcsEventInput): string | null {
   lines.push('END:VEVENT', 'END:VCALENDAR');
 
   return lines.join('\r\n') + '\r\n';
+}
+
+/** The `wedding` slice of `SiteSettings`, as stored in the sheet. */
+export interface WeddingSchedule {
+  /** ISO date, e.g. "2026-09-12". */
+  date: string;
+  /** 24h time, e.g. "17:00"; empty = midnight. */
+  time: string;
+  /** ISO date the event ends; empty = same day as `date`. */
+  endDate: string;
+  /** 24h end time; empty = start + 10 hours (a full day when `time` is empty). */
+  endTime: string;
+  /** IANA timezone, e.g. "Europe/Madrid"; empty = UTC-based comparison. */
+  timezone: string;
+}
+
+/**
+ * Start and end instants of the wedding as true UTC milliseconds, or null
+ * when the date is unusable.
+ *
+ * Uses the same end rule as the `.ics` event (explicit end, else start + 10h,
+ * rolling a too-early end time into the next day). A date without a start
+ * time covers that whole day. When `timezone` is empty or invalid the values
+ * are treated as UTC so the server and every browser agree on the instant.
+ */
+export function weddingInstants(wedding: WeddingSchedule): { startMs: number; endMs: number } | null {
+  const hasStartTime = Boolean(wedding.time.trim());
+  const startWallMs = parseWallTime(wedding.date, hasStartTime ? wedding.time : '00:00');
+  if (startWallMs === null) return null;
+
+  const endWallMs = hasStartTime
+    ? eventEndWallMs(startWallMs, wedding.endDate, wedding.endTime, wedding.date)
+    : startWallMs + DAY_MS - 1;
+
+  const timezone = wedding.timezone.trim();
+  if (timezone) {
+    try {
+      return {
+        startMs: wallToUtcMs(startWallMs, timezone),
+        endMs: wallToUtcMs(endWallMs, timezone),
+      };
+    } catch {
+      // Invalid timezone — fall back to the UTC-based comparison below.
+    }
+  }
+  return { startMs: startWallMs, endMs: endWallMs };
 }

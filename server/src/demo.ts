@@ -33,10 +33,10 @@ const DEMO_GUESTS: GuestRow[] = [
   },
 ];
 
-/** Demo wedding date is always ~100 days away, so the countdown never ends. */
+/** TEMPORARY (local preview): the wedding is over, so the post-wedding message shows. */
 function demoWeddingDate(): string {
   const date = new Date();
-  date.setDate(date.getDate() + 100);
+  date.setDate(date.getDate() - 30);
   return date.toISOString().slice(0, 10);
 }
 
@@ -51,7 +51,9 @@ export function createDemoSheetsStore(): SheetsStore {
     ['venue_address', '1 Garden Lane, Demo City'],
     ['dress_code', 'Semi-formal'],
     ['gift_registry_url', 'https://example.com/gift-registry'],
-    ['rsvp_deadline', ''],
+    // TEMPORARY (local preview): a past strict deadline closes the RSVP window.
+    ['rsvp_deadline', '2026-08-01'],
+    ['rsvp_deadline_strict', 'TRUE'],
     ['site_language', 'en'],
   ]);
   const guests = new Map(DEMO_GUESTS.map((guest) => [guest.token, { ...guest }]));

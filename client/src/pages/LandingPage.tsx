@@ -5,6 +5,7 @@ import { fetchSettings } from '../api/client';
 import { useLanguage } from '../i18n/LanguageContext';
 import { formatDate, formatTime } from '../utils/date';
 import { useSiteImages } from '../utils/images';
+import { useRsvpWindow } from '../utils/rsvpWindow';
 import { CountdownTimer } from '../components/CountdownTimer';
 import { ErrorScreen, LoadingScreen } from '../components/Feedback';
 import { DetailCards } from '../components/sections/DetailCards';
@@ -68,6 +69,7 @@ export function LandingPage() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [failed, setFailed] = useState(false);
   const { hero, photos } = useSiteImages();
+  const rsvpWindow = useRsvpWindow(settings?.wedding ?? null);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,12 +111,16 @@ export function LandingPage() {
       </Hero>
 
       <Section>
-        <CountdownTimer date={settings.wedding.date} time={settings.wedding.time} />
+        <CountdownTimer wedding={settings.wedding} />
       </Section>
 
       <Section>
         <SectionTitle>{t('landing.detailsTitle')}</SectionTitle>
-        <DetailCards settings={settings} giftUrl={settings.giftRegistryUrl} />
+        <DetailCards
+          settings={settings}
+          giftUrl={settings.giftRegistryUrl}
+          rsvpClosed={!rsvpWindow.open}
+        />
       </Section>
 
       <PhotoCarousel photos={photos} />

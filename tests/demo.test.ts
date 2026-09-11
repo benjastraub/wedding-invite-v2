@@ -36,10 +36,13 @@ describe('demo mode API', () => {
       language: string;
       couple: { groom: string; bride: string };
       venue: { name: string };
+      wedding: { rsvpDeadlineStrict: boolean };
     };
     expect(settings.language).toBe('en');
     expect(settings.couple).toEqual({ groom: 'Alex', bride: 'Sam' });
     expect(settings.venue.name).toBe('The Rose Garden');
+    // Demo mode never closes the RSVP window: no deadline, no strict blocking.
+    expect(settings.wedding.rsvpDeadlineStrict).toBe(false);
   });
 
   it('knows the sample guests', async () => {
