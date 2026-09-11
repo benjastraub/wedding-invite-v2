@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Interlocking rings illustration">
+  <rect width="400" height="400" fill="#f7f3e8"/>
+  <circle cx="170" cy="200" r="86" stroke="#c9a86a" stroke-width="16" fill="none"/>
+  <circle cx="230" cy="200" r="86" stroke="#c9a86a" stroke-width="16" fill="none" opacity="0.55"/>
+  <!-- sparkle -->
+  <g stroke="#5f8a4f" stroke-width="6" stroke-linecap="round">
+    <path d="M112 92 v34 M95 109 h34"/>
+    <path d="M288 290 v26 M275 303 h26"/>
+  </g>
+  <g fill="#879a7b">
+    <circle cx="112" cy="109" r="5"/>
+    <circle cx="288" cy="303" r="5"/>
+  </g>
+</svg>

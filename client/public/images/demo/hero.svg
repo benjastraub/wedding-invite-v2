@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 320" fill="none" role="img" aria-label="Wedding arch illustration">
+  <!-- outer arch -->
+  <path d="M90 290 V165 Q90 75 210 75 Q330 75 330 165 V290" stroke="#879a7b" stroke-width="6" stroke-linecap="round"/>
+  <!-- inner arch -->
+  <path d="M120 290 V168 Q120 98 210 98 Q300 98 300 168 V290" stroke="#c9a86a" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+  <!-- flower garland -->
+  <path d="M100 132 Q210 48 320 132" stroke="#5f8a4f" stroke-width="3.5" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="100" cy="132" r="5" fill="#5f8a4f"/>
+  <circle cx="320" cy="132" r="5" fill="#5f8a4f"/>
+  <circle cx="210" cy="92" r="5" fill="#c9a86a"/>
+  <!-- hanging cord -->
+  <path d="M210 92 V162" stroke="#879a7b" stroke-width="3" stroke-linecap="round"/>
+  <!-- interlocking rings -->
+  <g stroke="#c9a86a" stroke-width="6.5">
+    <circle cx="210" cy="188" r="25"/>
+    <circle cx="238" cy="200" r="25"/>
+  </g>
+  <!-- base florals -->
+  <g>
+    <circle cx="90" cy="278" r="9" fill="#fdfcf6" stroke="#5f8a4f" stroke-width="3.5"/>
+    <circle cx="330" cy="278" r="9" fill="#fdfcf6" stroke="#5f8a4f" stroke-width="3.5"/>
+    <path d="M90 269 V256 M78 266 L68 261 M102 266 L112 261 M83 278 L74 280 M97 278 L106 280" stroke="#879a7b" stroke-width="3" stroke-linecap="round"/>
+    <path d="M330 269 V256 M318 266 L308 261 M342 266 L352 261 M323 278 L314 280 M337 278 L346 280" stroke="#879a7b" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <!-- floating petals -->
+  <g fill="#5f8a4f" opacity="0.7">
+    <path d="M52 150 q9 -16 18 0 q-9 16 -18 0Z"/>
+    <path d="M350 165 q9 -16 18 0 q-9 16 -18 0Z" fill="#c9a86a"/>
+    <path d="M178 38 q7 -12 14 0 q-7 12 -14 0Z" fill="#879a7b"/>
+  </g>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Bunting garland illustration">
+  <rect width="400" height="400" fill="#f7f3e8"/>
+  <!-- string -->
+  <path d="M60 120 Q200 190 340 120" stroke="#879a7b" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <!-- flags -->
+  <g>
+    <path d="M100 158 L120 222 L140 158 Z" fill="#5f8a4f"/>
+    <path d="M160 176 L180 240 L200 176 Z" fill="#c9a86a"/>
+    <path d="M220 176 L240 240 L260 176 Z" fill="#879a7b"/>
+    <path d="M280 158 L300 222 L320 158 Z" fill="#5f8a4f"/>
+  </g>
+  <!-- little hearts -->
+  <g fill="#c9a86a" opacity="0.85">
+    <path d="M120 320 q-14 -20 0 -30 q14 10 0 30Z"/>
+    <path d="M280 320 q-14 -20 0 -30 q14 10 0 30Z" fill="#5f8a4f"/>
+  </g>
+</svg>

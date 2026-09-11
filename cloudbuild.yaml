@@ -1,0 +1,61 @@
+# Cloud Build pipeline: builds the Docker image, pushes it to Artifact
+# Registry and deploys it to Cloud Run as the service account.
+#
+# Automatic deploys: connect this repo to a Cloud Build trigger (push to
+# main). Manual: gcloud builds submit --config=cloudbuild.yaml \
+#   --substitutions=_SHEET_ID=YOUR_SPREADSHEET_ID
+#
+# The deploy step injects GOOGLE_SPREADSHEET_ID; on Cloud Run the service
+# authenticates to Google Sheets automatically (metadata server) — no keys.
+steps:
+  - id: 'build-image'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/wedding-invite:$SHORT_SHA'
+      - '.'
+
+  - id: 'push-image'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/wedding-invite:$SHORT_SHA'
+
+  - id: 'deploy-cloud-run'
+    # gcr.io/cloud-builders/gcloud is pullable by any build service account,
+    # unlike gcr.io/google.com/cloudsdksdk/cloud-sdk which is denied for
+    # user-managed SAs (artifactregistry.repositories.downloadArtifacts).
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/wedding-invite:$SHORT_SHA'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--service-account=${_SA_NAME}@$PROJECT_ID.iam.gserviceaccount.com'
+      - '--set-env-vars=GOOGLE_SPREADSHEET_ID=${_SHEET_ID},GOOGLE_DRIVE_FOLDER_ID=${_DRIVE_FOLDER_ID}'
+      - '--allow-unauthenticated'
+
+substitutions:
+  _REGION: 'us-central1'
+  # Must match the Artifact Registry repository created by scripts/gcp-setup.sh
+  # (its REPOSITORY env var; default 'wedding').
+  _REPOSITORY: 'wedding'
+  _SERVICE_NAME: 'wedding-invite'
+  # Must match the service account created by scripts/gcp-setup.sh.
+  _SA_NAME: 'wedding-invite'
+  # Set this in the Cloud Build trigger (or via --substitutions): your
+  # spreadsheet ID (copy it from the sheet's URL).
+  _SHEET_ID: ''
+  # Optional: the Drive folder ID holding the site photos. Leave empty to
+  # run without a photo gallery.
+  _DRIVE_FOLDER_ID: ''
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/wedding-invite:$SHORT_SHA'

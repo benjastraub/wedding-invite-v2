@@ -1,0 +1,31 @@
+{
+  "name": "wedding-invite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personalized wedding invitation site: React + styled-components SPA with an Express API backed by Google Sheets, deployed on Cloud Run via Cloud Build.",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w shared && npm run build -w server && npm run build -w client",
+    "typecheck": "npm run build -w shared && npm run typecheck -w server && npm run typecheck -w client && tsc -p tsconfig.json",
+    "test": "npm run build -w shared && vitest run",
+    "sheet:setup": "node scripts/setup-sheet.mjs",
+    "sheet:tokens": "node scripts/generate-tokens.mjs",
+    "links:export": "node scripts/export-links.mjs",
+    "gcp:setup": "bash scripts/gcp-setup.sh"
+  },
+  "devDependencies": {
+    "@googleapis/sheets": "^14.0.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}

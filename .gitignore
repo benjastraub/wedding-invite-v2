@@ -1,0 +1,17 @@
+node_modules/
+dist/
+
+# Local environment (never commit real values)
+.env
+.env.local
+
+# Service account keys (never commit)
+service-account-key.json
+*.key.json
+
+# Generated guest links
+guest-links.csv
+
+# Misc
+*.log
+.DS_Store
