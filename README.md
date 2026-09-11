@@ -55,6 +55,19 @@ Open <http://localhost:5173>. Sample guest links to try:
 RSVPs in demo mode are kept in memory and reset on restart. The README below
 explains how to connect a real sheet.
 
+## 📸 Screenshots
+
+Captured in demo mode (built-in sample data). Each preview is a fixed-size
+phone frame that slowly auto-scrolls through the full page.
+
+**Landing page**
+
+![Landing page — mobile](docs/screenshots/landing-mobile.gif)
+
+**Invite page**
+
+![Invite page — mobile](docs/screenshots/invite-mobile.gif)
+
 ## Architecture
 
 ```mermaid
