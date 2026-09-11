@@ -134,6 +134,11 @@ Artifact Registry, creates the service account
 repository, grants Cloud Build permission to deploy to Cloud Run, then prints
 next steps.
 
+The script is idempotent — safe to re-run. On a freshly created project, IAM
+permission propagation can lag a few seconds, so the script retries the Cloud
+Build service-account grant automatically instead of asking you to run it
+twice.
+
 **Which GCP project does it use?** The script never prompts. It resolves the
 project in this order:
 

@@ -105,9 +105,25 @@ echo "==> Granting Cloud Build ($CB_EMAIL) permission to deploy to Cloud Run..."
 gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --member="serviceAccount:$CB_EMAIL" \
   --role="roles/run.admin"
-gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
-  --member="serviceAccount:$CB_EMAIL" \
-  --role="roles/iam.serviceAccountUser"
+# The service-account binding is a read-modify-write: on a freshly created
+# project (or service account) IAM can lag a few seconds and the read half
+# fails with "iam.serviceAccounts.getIamPolicy ... PERMISSION_DENIED" even
+# though the caller is the project owner. Retry briefly instead of failing,
+# and pin --project so it never depends on the active gcloud project.
+for attempt in 1 2 3 4 5; do
+  if gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
+    --member="serviceAccount:$CB_EMAIL" \
+    --role="roles/iam.serviceAccountUser" \
+    --project "$PROJECT_ID"; then
+    break
+  fi
+  if [ "$attempt" -eq 5 ]; then
+    echo "Failed to grant roles/iam.serviceAccountUser to Cloud Build after $attempt attempts." >&2
+    exit 1
+  fi
+  echo "  (IAM propagation lag — retrying in 5s)" >&2
+  sleep 5
+done
 
 if ! gcloud artifacts repositories describe "$REPOSITORY" \
   --location="$REGION" --project "$PROJECT_ID" >/dev/null 2>&1; then
